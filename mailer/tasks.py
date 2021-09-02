@@ -44,7 +44,7 @@ def send_reminder_to_weekly_truants():
     """
 
     for subscription in Subscription.objects.annotate(
-        planned_classes=Count('classes', filter=(Q(classes__is_scheduled=True) | Q(classes__timeline__isnull=False)))).\
+        planned_classes=Count('classes', filter=Q(classes__is_scheduled=True, classes__timeline__isnull=False))).\
         filter(planned_classes=0, buy_date__lte=week_ago, first_lesson_date__isnull=True, need_remind=True):
 
         if not subscription.is_due():
