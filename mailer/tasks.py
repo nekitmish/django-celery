@@ -31,8 +31,9 @@ def send_reminder_to_weekly_truants():
                                   is_scheduled=True,
                                   timeline__isnull=False,
                                   timeline__end__lte=week_ago).order_by("timeline__end"):
-        if not c.subscription.is_due() and (
-            c.customer.classes.filter(is_scheduled=True, timeline__isnull=False).order_by("timeline__end").last()) == c:
+
+        if not c.subscription.is_due() and (c.customer.classes.filter(
+        is_scheduled=True, timeline__isnull=False).order_by("timeline__end").last()) == c:
             skips_classes_student.send(sender=send_reminder_to_weekly_truants, instance=c)
             c.subscription.need_remind = False
             c.subscription.save()
@@ -43,12 +44,9 @@ def send_reminder_to_weekly_truants():
     """
 
     for subscription in Subscription.objects.annotate(
-        planned_classes=Count('classes',
-                              filter=Q(classes__is_scheduled=True,
-                                       classes__timeline__isnull=False))).filter(planned_classes=0,
-                                                                                 buy_date__lte=week_ago,
-                                                                                 first_lesson_date__isnull=True,
-                                                                                 need_remind=True):
+        planned_classes=Count('classes', filter=(Q(classes__is_scheduled=True) | Q(classes__timeline__isnull=False)))).\
+        filter(planned_classes=0, buy_date__lte=week_ago, first_lesson_date__isnull=True, need_remind=True):
+
         if not subscription.is_due():
             skips_classes_student.send(sender=send_reminder_to_weekly_truants, instance=subscription)
             subscription.need_remind = False
