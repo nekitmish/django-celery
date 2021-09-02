@@ -104,6 +104,8 @@ class Subscription(ProductContainer):
 
     first_lesson_date = models.DateTimeField('Date of the first lesson', editable=False, null=True)
 
+    need_remind = models.BooleanField(editable=False, default=True)
+
     def __str__(self):
         return self.name_for_user
 
