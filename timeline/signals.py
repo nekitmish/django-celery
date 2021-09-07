@@ -15,7 +15,7 @@ skips_classes_student = Signal(providing_args=['instance'])   # send a reminder 
 def notify_skips_classes_student(sender, **kwargs):
     c = kwargs['instance']
     owl = Owl(
-        template='mailer/reminder.html',
+        template='mail/class/student/reminder.html',
         ctx={
             'c': c,
         },
