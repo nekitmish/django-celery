@@ -322,8 +322,8 @@ CELERYBEAT_SCHEDULE = {
         'task': 'accounting.tasks.bill_timeline_entries',
         'schedule': timedelta(minutes=1),
     },
-    'remind_weekly_truants': {
-        'task': 'market.tasks.remind_weekly_truants',
+    'send_reminder_unused_subscription': {
+        'task': 'market.tasks.send_reminder_unused_subscription',
         'schedule': crontab(minute=0, hour=0),
     },
 }

@@ -7,12 +7,12 @@ from mixer.backend.django import mixer
 
 from elk.utils.testing import ClassIntegrationTestCase, create_customer, create_teacher
 from market.models import Subscription
-from market.tasks import remind_weekly_truants
+from market.tasks import send_reminder_unused_subscription
 from products.models import Product1
 
 
 @freeze_time('2032-12-01 12:00')
-class TestNotificationUnusedSubscription(ClassIntegrationTestCase):
+class TestSendReminderUnusedSubscription(ClassIntegrationTestCase):
     @classmethod
     def setUpTestData(cls):
         cls.product = Product1.objects.get(pk=1)
@@ -42,7 +42,7 @@ class TestNotificationUnusedSubscription(ClassIntegrationTestCase):
     def test_remind_weekly_truants(self):
         with freeze_time('2032-12-08 12:00'):
             self.assertTrue(self.s.need_remind)
-            remind_weekly_truants()
+            send_reminder_unused_subscription()
             self.s.refresh_from_db()
             self.assertFalse(self.s.need_remind)
             self.assertEqual(len(mail.outbox), 1)
@@ -55,25 +55,25 @@ class TestNotificationUnusedSubscription(ClassIntegrationTestCase):
         cls = self.s.classes.first()
         self._schedule(cls, self.tzdatetime('UTC', 2032, 12, 15, 12, 0))
         with freeze_time('2032-12-08 12:00'):
-            remind_weekly_truants()
+            send_reminder_unused_subscription()
             self.assertEqual(len(mail.outbox), 0)
 
     def test_not_send_reminder_if_passed_class_6_days_ago(self):
         cls = self.s.classes.first()
         self._schedule(cls, self.tzdatetime('UTC', 2032, 12, 2, 12, 0))
         with freeze_time('2032-12-08 12:00'):
-            remind_weekly_truants()
+            send_reminder_unused_subscription()
             self.assertEqual(len(mail.outbox), 0)
 
     def test_send_reminder_if_passed_class_7_days_ago(self):
         cls = self.s.classes.first()
         self._schedule(cls, self.tzdatetime('UTC', 2032, 12, 2, 12, 0))
         with freeze_time('2032-12-09 12:00'):
-            remind_weekly_truants()
+            send_reminder_unused_subscription()
             self.assertEqual(len(mail.outbox), 1)
 
     def test_do_not_repeat_reminder(self):
         with freeze_time('2032-12-08 12:00'):
             for i in range(10):
-                remind_weekly_truants()
+                send_reminder_unused_subscription()
             self.assertEqual(len(mail.outbox), 1)
