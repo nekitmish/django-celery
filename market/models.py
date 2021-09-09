@@ -7,7 +7,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import F, Q, Max
 from django.utils import timezone
 from djmoney.models.fields import MoneyField
 
@@ -82,6 +82,28 @@ class SubscriptionManager(ProductContainerManager):
             Q(first_lesson_date__lte=edge_date) | Q(first_lesson_date__isnull=True, buy_date__lte=edge_date)
         )
 
+    def active_subscriptions(self):
+        """
+        Find active subscriptions, e.g not fully used and not due
+        """
+        due_subscriptions_pks = [sub.pk for sub in self.due()]
+        return self.get_queryset().filter(is_fully_used=False).exclude(pk__in=due_subscriptions_pks)
+
+    def not_used_for_a_week(self):
+        """
+        Find active subscriptions that have not been used for a week or more
+
+        Subscriptions last class was a week or more ago and no longer scheduled.
+
+        And subscriptions purchased a week or more ago, for which there were no
+
+        classes during this time and which have no planned
+        """
+        week_ago = timezone.now() - timedelta(weeks=1)
+        return self.active_subscriptions().annotate(last_class_date=Max("classes__timeline__start",
+                                                                        filter=Q(classes__is_scheduled=True, classes__timeline__isnull=False))).\
+            filter(Q(last_class_date__lte=week_ago) | Q(last_class_date__isnull=True, buy_date__lte=week_ago))
+
 
 class Subscription(ProductContainer):
     """
@@ -103,6 +125,8 @@ class Subscription(ProductContainer):
     duration = models.DurationField(editable=False)  # every subscription cares a duration field, taken from its product
 
     first_lesson_date = models.DateTimeField('Date of the first lesson', editable=False, null=True)
+
+    need_remind = models.BooleanField(editable=False, default=True)
 
     def __str__(self):
         return self.name_for_user
@@ -218,6 +242,10 @@ class Subscription(ProductContainer):
                 return True
 
         return False
+
+    def not_need_remind(self):
+        self.need_remind = False
+        self.save()
 
 
 class ClassesManager(ProductContainerManager):

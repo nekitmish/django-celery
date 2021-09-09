@@ -1,0 +1,15 @@
+{% extends "mail_templated/base.tpl" %}
+{% load humanize %}
+
+
+{% block subject %}
+Dear {{ c.customer.first_name | capfirst }}! You're a truant! :)
+{% endblock %}
+
+{% block body %}
+Hello, {{ c.customer.first_name | capfirst }} {{ c.customer.last_name | capfirst }},
+
+You haven't been in class for over a week! Hurry up, get started, your subscription is still active!
+
+{% include 'mailer/_signature.html' %}
+{% endblock %}
